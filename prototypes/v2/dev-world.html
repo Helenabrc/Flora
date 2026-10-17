@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flora World Dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+  :root{--sage:#5A7A66;--sage-deep:#3D5A48;--sage-soft:#DCE5DD;--cream:#F3EEE6;--paper:#FBF8F3;--ink:#24302A;--muted:#6B7A70;--line:rgba(36,48,42,.12)}
+  html,body{margin:0;height:100%;background:#1d1424;font-family:Figtree,system-ui,sans-serif;overflow:hidden}
+  #screen{position:absolute;inset:0}
+  #dev{position:fixed;left:max(16px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 76px);display:flex;flex-direction:column;gap:6px;z-index:10}
+  #dev.hide{display:none}
+  #dev button{font:600 12px Figtree,sans-serif;padding:7px 11px;border:0;border-radius:10px;background:rgba(251,248,243,.88);color:#24302A;cursor:pointer;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  #devToggle{position:fixed;right:max(16px,env(safe-area-inset-right));top:calc(env(safe-area-inset-top) + 14px);z-index:11;font:600 11px Figtree,sans-serif;padding:6px 10px;border:0;border-radius:99px;background:rgba(36,48,42,.6);color:#fff}
+  #log{font:11px ui-monospace,monospace;color:#fff;background:rgba(0,0,0,.45);padding:6px 8px;border-radius:8px;max-width:240px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div id="screen"></div>
+<button id="devToggle" type="button">dev</button>
+<div id="dev" class="hide">
+  <button data-meal="oats">Porridge oats (beta-glucan, AX)</button>
+  <button data-meal="banana">Green banana (resistant starch)</button>
+  <button data-meal="leek">Leek &amp; onion (inulin-FOS)</button>
+  <button data-meal="berries">Berries + apple (polyphenols, pectin)</button>
+  <button data-meal="burger">Cheeseburger + cola (high-fat, sugar)</button>
+  <button data-meal="feast">Big fibre feast</button>
+  <button data-act="starve">Starve all niches</button>
+  <button data-act="community">setCommunity (Bacteroides heavy)</button>
+  <div id="log"></div>
+</div>
+<script src="roster.js"></script>
+<script>
+  // Load the real cast.js if it exists, else the stub, then world.js.
+  (function () {
+    function load(src, ok, fail) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = fail; document.head.appendChild(s); }
+    var forceStub = /stub/.test(location.search);
+    function world() { load('world.js', boot); }
+    if (forceStub) load('stub-cast.js', world); else load('cast.js', world, function () { load('stub-cast.js', world); });
+  })();
+  var logEl = document.getElementById('log');
+  function log(m) { console.log('[dev]', m); logEl.textContent = (m + '\n' + logEl.textContent).slice(0, 600); }
+  window.FloraApp = {
+    tokens: { sage: '#5A7A66', sageDeep: '#3D5A48', sageSoft: '#DCE5DD', cream: '#F3EEE6', paper: '#FBF8F3', ink: '#24302A', muted: '#6B7A70' },
+    openProfile: function (sp, inst) { log('openProfile ' + sp + ' ' + (inst && inst.id)); window.__lastProfile = sp; },
+    show: function (name, payload) { log('show ' + name); window.__lastShow = name; if (name === 'world' && payload && payload.entry) FloraWorld.applyMeal(payload.entry); },
+    saveEntry: function () {}, entries: function () { return []; },
+  };
+  var MEALS = {
+    oats: { foods: [{ name: 'Porridge oats', serving: '40 g dry', fibreG: 4.0, fibreTypes: ['beta-glucan', 'arabinoxylan'], flags: [] }] },
+    banana: { foods: [{ name: 'Green banana', serving: '1 medium', fibreG: 3.1, fibreTypes: ['resistant-starch'], flags: [] }] },
+    leek: { foods: [{ name: 'Leek & onion soup', serving: '1 bowl', fibreG: 3.4, fibreTypes: ['inulin-fos'], flags: [] }] },
+    berries: { foods: [{ name: 'Blueberries', serving: '80 g', fibreG: 2.0, fibreTypes: ['polyphenols'], flags: [] }, { name: 'Apple', serving: '1', fibreG: 3.6, fibreTypes: ['pectin', 'polyphenols'], flags: [] }] },
+    burger: { foods: [{ name: 'Cheeseburger', serving: '1', fibreG: 1.2, fibreTypes: [], flags: ['high-fat'] }, { name: 'Cola', serving: '330 ml', fibreG: 0, fibreTypes: [], flags: ['sugar'] }] },
+    feast: { foods: [{ name: 'Lentil dal', serving: '1 bowl', fibreG: 8, fibreTypes: ['resistant-starch', 'cellulose', 'gos'], flags: [] }, { name: 'Rye bread', serving: '2 slices', fibreG: 5, fibreTypes: ['arabinoxylan', 'beta-glucan'], flags: [] }, { name: 'Kimchi', serving: '50 g', fibreG: 1, fibreTypes: ['cellulose'], flags: ['fermented'] }] },
+  };
+  function boot() {
+    FloraWorld.mount(document.getElementById('screen'));
+    FloraWorld.onShow();
+    log('cast: ' + (window.FloraCast && FloraCast.__stub ? 'stub' : 'real'));
+  }
+  document.getElementById('devToggle').onclick = function () { document.getElementById('dev').classList.toggle('hide'); };
+  document.getElementById('dev').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.meal) {
+      var m = MEALS[b.dataset.meal];
+      var entry = { id: 'e' + Date.now(), time: new Date().toISOString(), foods: m.foods, totalFibreG: m.foods.reduce(function (a, f) { return a + f.fibreG; }, 0), feelings: { tags: ['great'], note: '' } };
+      FloraApp.show('world', { entry: entry });
+    } else if (b.dataset.act === 'starve') {
+      var n = FloraWorld._debug.state.nour; for (var k in n) n[k] = k === 'springs' ? 0.6 : 0.12; log('starved');
+    } else if (b.dataset.act === 'community') {
+      FloraWorld.setCommunity({ 'b-thetaiotaomicron': 8, 'b-ovatus': 6, 'p-vulgatus': 10, 'f-prausnitzii': 3, 'a-muciniphila': 2, 'e-coli': 3, 'd-piger': 2, 'b-longum': 2 });
+      log('community set');
+    }
+  });
+</script>
+</body>
+</html>

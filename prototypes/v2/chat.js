@@ -733,12 +733,29 @@
     '.fc-iconbtn.fc-has-new .fc-dot{opacity:1}',
     '.fc-col{position:relative;z-index:1;max-width:640px;margin:0 auto;min-height:calc(100% - 68px);display:flex;flex-direction:column;align-items:center;',
     'padding:clamp(0px,2vh,24px) 20px calc(28px + env(safe-area-inset-bottom,0px))}',
-    '.fc-stage{--fc-size:clamp(220px,64vw,272px);position:relative;width:var(--fc-size);height:var(--fc-size);flex:none;',
+    '.fc-stage{--fc-size:clamp(250px,72vw,300px);position:relative;width:var(--fc-size);height:var(--fc-size);flex:none;',
     'transition:width .8s var(--fc-ease),height .8s var(--fc-ease)}',
-    '.fc-root.fc-compact .fc-stage{--fc-size:220px}',
-    '.fc-halo{position:absolute;inset:8%;border-radius:50%;background:radial-gradient(circle at 50% 46%,rgba(255,255,255,.95),rgba(220,229,221,.55) 45%,rgba(220,229,221,0) 70%);',
+    '.fc-root.fc-compact .fc-stage{--fc-size:250px}',
+    // halo: a warm pool of light matching the artwork background, ringed by a faint sage glow
+    '.fc-halo{position:absolute;inset:-14%;border-radius:50%;pointer-events:none;background:',
+    'radial-gradient(closest-side,rgba(234,224,207,.95) 0%,rgba(236,228,213,.85) 38%,rgba(226,231,220,.55) 62%,rgba(220,229,221,.22) 80%,rgba(220,229,221,0) 100%);',
     'animation:fc-breathe 7s ease-in-out infinite}',
     '.fc-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}',
+    '.fc-stage.fc-img canvas{display:none}',
+    '.fc-fig{position:absolute;inset:0;transform-origin:50% 88%;will-change:transform;pointer-events:none}',
+    '.fc-fig img{display:block;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .9s ease;user-select:none;-webkit-user-drag:none;',
+    '-webkit-mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 84%,transparent 100%);mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 84%,transparent 100%)}',
+    '.fc-stage.fc-img .fc-fig img{opacity:1}',
+    '.fc-stage:not(.fc-img) .fc-fig,.fc-stage:not(.fc-img) .fc-shadow{display:none}',
+    '.fc-shadow{position:absolute;left:31%;width:38%;top:85%;height:7%;border-radius:50%;pointer-events:none;will-change:transform,opacity;',
+    'background:radial-gradient(closest-side,rgba(58,66,50,.26),rgba(58,66,50,.1) 60%,rgba(58,66,50,0))}',
+    '.fc-sparks{position:absolute;inset:0;pointer-events:none;overflow:visible}',
+    '.fc-spark{position:absolute;left:50%;top:38%;width:var(--s,10px);height:var(--s,10px);margin:calc(var(--s,10px)/-2) 0 0 calc(var(--s,10px)/-2);',
+    'background:var(--c,#fff);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);opacity:0;',
+    'animation:fc-spark var(--d,900ms) cubic-bezier(.15,.7,.3,1) var(--w,0ms) forwards}',
+    '.fc-spark.fc-dot{clip-path:none;border-radius:50%}',
+    '@keyframes fc-spark{0%{opacity:0;transform:translate(0,0) scale(.2) rotate(0)}25%{opacity:1}',
+    '100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1) rotate(80deg)}}',
     '.fc-echo{min-height:22px;margin:2px 0 6px;font-size:14px;color:var(--fc-muted);text-align:center;max-width:34ch;',
     'opacity:0;transform:translateY(4px);transition:opacity .5s,transform .5s var(--fc-ease);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.fc-echo.fc-on{opacity:1;transform:none}',
@@ -898,8 +915,9 @@
     '.fc-grab{display:none}.fc-sh-head{padding-top:22px}',
     '.fc-say{max-width:20em}',
     '}',
-    '@media (max-height:760px){.fc-stage{--fc-size:220px}}',
-    '@media (max-width:759px){.fc-root.fc-compact .fc-stage{--fc-size:190px}.fc-root.fc-compact .fc-say{font-size:clamp(23px,6vw,30px)}.fc-root.fc-compact .fc-say.fc-s,.fc-root.fc-compact .fc-say.fc-xs{font-size:clamp(20px,5.2vw,25px)}.fc-top{height:60px}.fc-iconbtn{top:9px}.fc-col{min-height:calc(100% - 60px)}.fc-widget,.fc-chips{margin-top:18px}.fc-form{margin-top:18px}}',
+    '@media (max-height:760px){.fc-stage{--fc-size:240px}}',
+    '@media (min-width:760px){.fc-stage{--fc-size:340px}.fc-root.fc-compact .fc-stage{--fc-size:280px}}',
+    '@media (max-width:759px){.fc-root.fc-compact .fc-stage{--fc-size:240px}.fc-root.fc-compact .fc-say{font-size:clamp(23px,6vw,30px)}.fc-root.fc-compact .fc-say.fc-s,.fc-root.fc-compact .fc-say.fc-xs{font-size:clamp(20px,5.2vw,25px)}.fc-top{height:60px}.fc-iconbtn{top:9px}.fc-col{min-height:calc(100% - 60px)}.fc-widget,.fc-chips{margin-top:18px}.fc-form{margin-top:18px}}',
     '@media (max-width:380px){.fc-saved{gap:14px}.fc-ring{width:112px;height:112px}.fc-ring-c b{font-size:32px}}',
     '@media (prefers-reduced-motion:reduce){',
     '.fc-root *,.fc-root *::before,.fc-root *::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important;transition-delay:0ms!important}',
@@ -995,8 +1013,10 @@
     g.stroke();
   }
 
-  function FloraStage(canvas) {
+  function FloraStage(canvas, parts) {
     this.c = canvas; this.g = canvas.getContext('2d');
+    this.p = parts || {};
+    this.imgOK = false; this.imgLoading = false; this.talkAmp = 0;
     this.t = 0; this.mood = 'happy'; this.talkUntil = 0; this.hopAt = -10;
     this.lookX = 0; this.lookY = 0; this.tx = 0; this.ty = 0;
     this.running = false; this.last = 0; this.w = 0; this.h = 0; this.dpr = 1;
@@ -1019,7 +1039,82 @@
   FloraStage.prototype.stop = function () { this.running = false; cancelAnimationFrame(this.raf); };
   FloraStage.prototype.talk = function (ms) { this.talkUntil = this.t + ms / 1000; };
   FloraStage.prototype.hop = function () { this.hopAt = this.t; };
+  FloraStage.prototype.loadImage = function (src) {
+    var self = this, img = this.p.img;
+    if (!img || !src) return;
+    this.imgLoading = true;
+    // if the artwork is very slow, show the drawn Flora rather than an empty stage
+    setTimeout(function () { self.imgLoading = false; }, 2500);
+    img.onload = function () {
+      self.imgLoading = false;
+      self.imgOK = true;
+      self.p.stage.classList.add('fc-img');
+    };
+    img.onerror = function () {
+      self.imgLoading = false;
+      self.imgOK = false;
+      self.p.stage.classList.remove('fc-img');
+      console.warn('[FloraChat] Flora artwork failed to load, using drawFlora fallback');
+    };
+    img.src = src;
+  };
+  // A small burst of sage, cream and soft-gold sparkles around her head.
+  FloraStage.prototype.sparkle = function (n) {
+    var box = this.p.sparks;
+    if (!box || reduced()) return;
+    var cols = ['#FFFFFF', '#F3EEE6', '#B9CDBE', '#E9D9A6', '#8FB09A'];
+    var w = box.clientWidth || 260;
+    for (var i = 0; i < n; i++) {
+      var a = -Math.PI / 2 + (i / n - 0.5) * Math.PI * 1.5 + (Math.random() - 0.5) * 0.4;
+      var dist = w * (0.26 + Math.random() * 0.16);
+      var sp = document.createElement('i');
+      sp.className = 'fc-spark' + (i % 3 === 2 ? ' fc-dot' : '');
+      var sz = i % 3 === 2 ? 4 + Math.random() * 3 : 8 + Math.random() * 8;
+      sp.style.cssText = '--dx:' + (Math.cos(a) * dist).toFixed(1) + 'px;--dy:' + (Math.sin(a) * dist * 0.8).toFixed(1) + 'px;--s:' + sz.toFixed(1) +
+        'px;--c:' + cols[i % cols.length] + ';--w:' + Math.round(Math.random() * 160) + 'ms;--d:' + Math.round(800 + Math.random() * 400) + 'ms';
+      box.appendChild(sp);
+      (function (node) { setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 1500); })(sp);
+    }
+  };
+  // Image mode: breathing, float, talk squash, hop, pointer tilt, and a contact shadow that follows the float.
+  FloraStage.prototype.frameImage = function (dt) {
+    var fig = this.p.fig, sh = this.p.shadow;
+    var w = this.p.stage.clientWidth || 260;
+    var k = 1 - Math.pow(0.0025, dt);
+    this.lookX += (this.tx - this.lookX) * k;
+    this.lookY += (this.ty - this.lookY) * k;
+    var talking = this.t < this.talkUntil;
+    this.talkAmp += ((talking ? 1 : 0) - this.talkAmp) * (1 - Math.pow(0.002, dt));
+    if (reduced()) {
+      fig.style.transform = 'none';
+      sh.style.transform = 'none'; sh.style.opacity = '1';
+      return;
+    }
+    var t = this.t;
+    var fl = Math.sin(t * 1.15);                       // -1..1 float phase
+    var y = -(fl * 0.5 + 0.5) * w * 0.028;             // float up to ~2.8% of size
+    var breathe = Math.sin(t * 1.7);
+    var sy = 1 + breathe * 0.012, sx = 1 - breathe * 0.006;
+    var tb = Math.sin(t * 9.5) * this.talkAmp;         // talking squash-bounce
+    sy += tb * 0.022; sx -= tb * 0.012; y -= Math.max(0, tb) * w * 0.008;
+    var hp = (t - this.hopAt) / 0.95;
+    if (hp >= 0 && hp < 1) {
+      var decay = 1 - hp;
+      y -= Math.abs(Math.sin(hp * Math.PI * 2)) * w * 0.06 * decay;
+      var sq = Math.cos(hp * Math.PI * 4) * 0.035 * decay;
+      sy -= sq; sx += sq * 0.6;
+    }
+    var rot = this.lookX * 3.2;
+    if (this.mood === 'thinking') rot += Math.sin(t * 2.1) * 1.6;
+    var x = this.lookX * w * 0.012;
+    fig.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + rot.toFixed(2) + 'deg) scale(' + sx.toFixed(4) + ',' + sy.toFixed(4) + ')';
+    var lift = -y / (w * 0.06);                         // 0 on the ground .. ~1 at the top of a hop
+    sh.style.transform = 'translateX(' + (x * 0.6).toFixed(2) + 'px) scale(' + (1 - lift * 0.18).toFixed(3) + ',' + (1 - lift * 0.12).toFixed(3) + ')';
+    sh.style.opacity = (1 - lift * 0.35).toFixed(3);
+  };
   FloraStage.prototype.frame = function (dt) {
+    if (this.imgOK) { this.frameImage(dt); return; }
+    if (this.imgLoading) return;
     var c = this.c, g = this.g;
     var cw = c.clientWidth, ch = c.clientHeight;
     if (!cw || !ch) return;
@@ -1069,7 +1164,10 @@
      ===================================================================================== */
   var S = null; // UI state, created by mount
 
-  function mount(rootEl) {
+  // Flora's artwork, relative to the page (index.html lives in prototypes/v2). Canvas drawFlora is the fallback.
+  var FLORA_IMG = 'art/flora.png';
+
+  function mount(rootEl, opts) {
     if (!rootEl) throw new Error('FloraChat.mount needs a root element');
     injectCSS();
     if (S && S.root && S.root.parentNode) S.root.parentNode.removeChild(S.root);
@@ -1080,7 +1178,12 @@
     var logBtn = el('button', { class: 'fc-iconbtn', type: 'button', 'aria-label': 'Open logbook', 'aria-haspopup': 'dialog', html: ICON.book + '<span class="fc-dot" aria-hidden="true"></span>' });
     var top = el('header', { class: 'fc-top' }, [el('p', { class: 'fc-wordmark', 'aria-label': 'hiflora', text: 'hiflora' }), logBtn]);
     var canvas = el('canvas', { 'aria-hidden': 'true' });
-    var stageEl = el('div', { class: 'fc-stage', role: 'img', 'aria-label': 'Flora, a fuzzy sage-green microbe' }, [el('div', { class: 'fc-halo', 'aria-hidden': 'true' }), canvas]);
+    var shadow = el('div', { class: 'fc-shadow', 'aria-hidden': 'true' });
+    var img = el('img', { alt: '', 'aria-hidden': 'true', draggable: 'false', decoding: 'async' });
+    var fig = el('div', { class: 'fc-fig', 'aria-hidden': 'true' }, [img]);
+    var sparks = el('div', { class: 'fc-sparks', 'aria-hidden': 'true' });
+    var stageEl = el('div', { class: 'fc-stage', role: 'img', 'aria-label': 'Flora, a fluffy sage-green microbe with a leaf sprout' },
+      [el('div', { class: 'fc-halo', 'aria-hidden': 'true' }), shadow, fig, canvas, sparks]);
     var echo = el('p', { class: 'fc-echo', 'aria-hidden': 'true' });
     var say = el('div', { class: 'fc-say', 'aria-live': 'polite', 'aria-atomic': 'true', id: uid + '-say' });
     var widget = el('div', { class: 'fc-widget' });
@@ -1105,7 +1208,7 @@
     S = {
       root: root, scroll: scroll, say: say, echo: echo, widget: widget, chips: chips, input: input, sendBtn: sendBtn, form: form,
       txBtn: txBtn, txList: txList, logBtn: logBtn, sheetWrap: sheetWrap,
-      stage: new FloraStage(canvas), stageEl: stageEl,
+      stage: new FloraStage(canvas, { stage: stageEl, fig: fig, img: img, shadow: shadow, sparks: sparks }), stageEl: stageEl,
       ctx: null, res: null, token: 0, busy: false, sel: {}, shown: false, sheetOpen: false, lastFocus: null
     };
 
@@ -1143,6 +1246,7 @@
       if (document.hidden) S.stage.stop(); else if (S.shown) S.stage.start();
     });
 
+    S.stage.loadImage((opts && opts.floraSrc) || FLORA_IMG);
     reset();
     if (!window.FloraApp || !FloraApp.show) onShow(); // stand-alone: start animating straight away
     return root;
@@ -1231,6 +1335,8 @@
     var st = res.state || {};
     S.stage.mood = st.mood || 'happy';
     if (st.hop) S.stage.hop();
+    if (st.hop || st.mood === 'excited') S.stage.sparkle(st.hop ? 10 : 6);
+    else if (!initial && (res.say || []).length) S.stage.sparkle(3);
 
     if (res.entry) {
       appSave(res.entry);
