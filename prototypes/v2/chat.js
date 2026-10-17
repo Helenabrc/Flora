@@ -624,10 +624,10 @@
         itemsLine = cap(parts.length > 1 ? parts.slice(0, -1).join(', ') + ', and ' + parts[parts.length - 1] : parts[0]) + '.';
         if (foods.length === 1) itemsLine = cap(named[0]) + ', ' + gramsWord(foods[0].fibreG) + ' of fibre.';
       } else {
-        itemsLine = cap(listJoin(named)) + '.';
+        itemsLine = 'I heard ' + foods.length + ' things, all listed below.';
       }
       var totalLine;
-      if (total >= 1) totalLine = (foods.length > 1 ? 'That’s ' + Math.round(total) + ' g of fibre. ' : '');
+      if (total >= 1) totalLine = (foods.length > 1 ? 'That’s ' + (Math.round(total) === total ? '' : 'about ') + Math.round(total) + ' g of fibre. ' : '');
       else totalLine = 'Not much fibre in that, but every log helps me learn your patterns. ';
       var bio = total >= 0.5 ? benefitLine(foods) : '';
       var extra = flagLine(foods, total);
@@ -860,7 +860,7 @@
     '.fc-week-h span{font-size:12.5px;color:var(--fc-muted)}',
     '.fc-bars{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:124px;align-items:end}',
     '.fc-goal{position:absolute;left:0;right:0;border-top:1px dashed rgba(61,90,72,.45);pointer-events:none}',
-    '.fc-goal span{position:absolute;right:0;top:-18px;font-size:11px;color:var(--fc-sage-deep);background:rgba(255,255,255,.8);padding:0 4px;border-radius:4px}',
+    '.fc-goal span{position:absolute;left:0;top:-17px;font-size:11px;color:var(--fc-sage-deep);background:rgba(255,255,255,.8);padding:0 4px;border-radius:4px}',
     '.fc-bar{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}',
     '.fc-bar i{display:block;width:100%;max-width:30px;border-radius:9px 9px 5px 5px;background:var(--fc-sage);opacity:.55;min-height:4px;transition:height .9s var(--fc-ease)}',
     '.fc-bar.fc-today i{opacity:1;background:var(--fc-sage-deep)}',
@@ -899,6 +899,7 @@
     '.fc-say{max-width:20em}',
     '}',
     '@media (max-height:760px){.fc-stage{--fc-size:220px}}',
+    '@media (max-width:759px){.fc-root.fc-compact .fc-stage{--fc-size:190px}.fc-root.fc-compact .fc-say{font-size:clamp(23px,6vw,30px)}.fc-root.fc-compact .fc-say.fc-s,.fc-root.fc-compact .fc-say.fc-xs{font-size:clamp(20px,5.2vw,25px)}.fc-top{height:60px}.fc-iconbtn{top:9px}.fc-col{min-height:calc(100% - 60px)}.fc-widget,.fc-chips{margin-top:18px}.fc-form{margin-top:18px}}',
     '@media (max-width:380px){.fc-saved{gap:14px}.fc-ring{width:112px;height:112px}.fc-ring-c b{font-size:32px}}',
     '@media (prefers-reduced-motion:reduce){',
     '.fc-root *,.fc-root *::before,.fc-root *::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important;transition-delay:0ms!important}',
@@ -1036,17 +1037,17 @@
     var floatY = rm ? 0 : Math.sin(this.t * 1.15) * cw * 0.018;
     var hopP = (this.t - this.hopAt) / 0.9, hopY = 0;
     if (!rm && hopP >= 0 && hopP < 1) hopY = -Math.abs(Math.sin(hopP * Math.PI * 2)) * cw * 0.05 * (1 - hopP);
-    var size = cw * 0.72;
-    var cx = cw / 2, cy = ch * 0.47 + floatY + hopY;
+    var size = cw * 0.8;
+    var cx = cw / 2, cy = ch * 0.48 + floatY + hopY;
     // soft contact shadow
     var lift = (floatY + hopY) / (cw * 0.05);
     var sw = cw * 0.24 * (1 + lift * 0.12);
     g.save();
     g.globalAlpha = 0.16 - lift * 0.03;
-    var sg = g.createRadialGradient(cx, ch * 0.9, 0, cx, ch * 0.9, sw);
+    var sg = g.createRadialGradient(cx, ch * 0.93, 0, cx, ch * 0.93, sw);
     sg.addColorStop(0, 'rgba(36,48,42,0.9)'); sg.addColorStop(1, 'rgba(36,48,42,0)');
     g.fillStyle = sg;
-    g.beginPath(); g.ellipse(cx, ch * 0.9, sw, sw * 0.18, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(cx, ch * 0.93, sw, sw * 0.16, 0, 0, Math.PI * 2); g.fill();
     g.restore();
     var state = { t: this.t, talking: this.t < this.talkUntil, mood: this.mood, lookX: this.lookX, lookY: this.lookY };
     var cast = window.FloraCast;
@@ -1122,7 +1123,7 @@
       txList.hidden = !open;
       txBtn.setAttribute('aria-expanded', String(open));
       renderTxBtn();
-      if (open) txList.scrollTop = txList.scrollHeight;
+      if (open) { txList.scrollTop = txList.scrollHeight; setTimeout(function () { try { txList.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); } catch (e) {} }, 30); }
     });
     logBtn.addEventListener('click', function () { openLogbook(); });
     root.addEventListener('pointermove', function (e) {
@@ -1282,7 +1283,7 @@
 
   function setPlaceholder() {
     var ph = { idle: 'Or type hello', 'ask-food': 'Tell Flora what you ate', clarify: 'Describe it, or say skip',
-      confirm: 'Add or change anything', 'ask-feel': 'Add a note (optional)', saved: 'Log something else' }[S.ctx.phase] || 'Message Flora';
+      confirm: 'Add or change anything', 'ask-feel': 'Add a note (optional)', saved: 'Tell Flora about another meal' }[S.ctx.phase] || 'Message Flora';
     S.input.placeholder = ph;
     S.sendBtn.disabled = !S.input.value.trim() && S.ctx.phase !== 'ask-feel';
   }
@@ -1384,7 +1385,7 @@
       var seen = {};
       S.ctx.draft.foods.forEach(function (f) { f.fibreTypes.forEach(function (x) { seen[x] = 1; }); });
       var tl = Object.keys(seen).map(function (x) { return x.replace('-fos', ' / FOS').replace('gos', 'GOS').replace('-', ' '); });
-      types.textContent = tl.length ? 'Fibre types: ' + tl.join(', ') : '';
+      types.textContent = tl.length ? 'Fibre types: ' + tl.slice(0, 5).join(', ') + (tl.length > 5 ? ' and more' : '') : '';
     }
     S.ctx.draft.foods.forEach(function (f, i) {
       var li = el('li', { class: 'fc-food' });
@@ -1434,7 +1435,7 @@
     // sage arc = today's total including this log; the deeper arc on top = what was logged earlier today
     ring.innerHTML = ringSVG(total / GOAL_G, before / GOAL_G);
     ring.appendChild(el('div', { class: 'fc-ring-c', 'aria-hidden': 'true' }, [el('b', { text: String(Math.round(total)) }), el('span', { text: 'of ' + GOAL_G + ' g' })]));
-    var togo = Math.max(0, GOAL_G - total);
+    var togo = Math.max(0, GOAL_G - Math.round(total));
     var txt = el('div', { class: 'fc-saved-t' }, [
       el('h3', { text: togo <= 0 ? 'Goal reached today' : Math.round(togo) + ' g to go today' }),
       el('p', { text: 'Daily goal ' + GOAL_G + ' g, the commonly recommended adult intake.' }),
