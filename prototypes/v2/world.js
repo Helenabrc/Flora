@@ -159,7 +159,7 @@
     L.work = {
       mucus: [[L.pools[0].x - 62, 516], [L.pools[0].x + 60, 518], [L.pools[1].x - 44, 484], [L.pools[1].x + 40, 486], [L.pools[2].x - 36, 570], [L.pools[2].x + 36, 572]],
       quarry: [[c('quarry') - 44, 488], [c('quarry') + 4, 486], [c('quarry') + 50, 490], [c('quarry') - 86, 494]],
-      bakery: [[c('bakery') + 30, 488], [c('bakery') + 66, 486], [c('bakery') + 100, 490], [c('bakery') + 4, 494]],
+      bakery: [[c('bakery') + 30, 490], [c('bakery') + 70, 488], [c('bakery') + 112, 494], [c('bakery') + 4, 498], [c('bakery') - 30, 506], [c('bakery') + 50, 520], [c('bakery') + 96, 532]],
       fields: [[c('fields') - 108, 486], [c('fields') - 68, 490], [c('fields') - 26, 486], [c('fields') + 14, 490]],
       orchard: [[c('orchard') - 72, 488], [c('orchard') + 30, 486], [c('orchard') + 98, 490], [c('orchard') - 20, 492]],
       lab: [[c('lab') - 46, 490], [c('lab') + 98, 488], [c('lab') + 30, 486]],
@@ -344,12 +344,8 @@
         g.beginPath(); g.arc(fx, fy, i % 3 ? 2.4 : 1.6, 0, TAU); g.fill();
       }
     }
-    // mucus strands draped near the wall
-    g.strokeStyle = 'rgba(255,222,240,0.45)'; g.lineWidth = 2;
-    for (let i = 0; i < 5; i++) {
-      const x = n.x0 + 30 + i * 52;
-      g.beginPath(); g.moveTo(x, HZ + 4); g.quadraticCurveTo(x + 18, HZ + 22, x + 36, HZ + 6); g.stroke();
-    }
+    // a glossy film of mucus pooled along the base of the villi wall
+    softEllipse(g, n.cx - 10, HZ + 14, 150, 12, [255, 214, 236], 0.45);
   }
   function crystal(g, x, y, w, h, tilt, tone) {
     g.save(); g.translate(x, y); g.rotate(tilt);
@@ -977,7 +973,7 @@
     for (const [ex, dir] of ends) {
       if (Math.abs(ex - (x0 + x1) / 2) > (x1 - x0) / 2 + 220) continue;
       const rnd = mulberry(ex > 0 ? 5 : 3), dull = dir < 0;
-      villus(g, ex + dir * 10, YMAX - 120, 110, 640, dull ? [16, 22, 40] : [348, 46, 48], rnd, dull ? 0 : 0.6);
+      villus(g, ex + dir * -8, YMAX - 120, 96, 640, dull ? [16, 22, 40] : [348, 46, 48], rnd, dull ? 0 : 0.6);
       villus(g, ex + dir * 80, YMAX - 170, 70, 440, dull ? [24, 20, 46] : [352, 48, 54], rnd, dull ? 0 : 0.6);
       villus(g, ex + dir * 34, YMAX - 30, 90, 300, dull ? [14, 22, 34] : [344, 50, 44], rnd, 0);
     }
@@ -1311,11 +1307,12 @@
   function simulate(dt) {
     state.t += dt;
     const N = state.nour;
+    const fibre = (N.quarry + N.bakery + N.fields + N.orchard + N.lab) / 5;
     for (const k in N) {
-      if (k === 'mucus') N[k] += (0.62 - N[k]) * dt * 0.004; // host keeps secreting mucin
+      // the host keeps secreting mucin; it rebuilds faster when fibre (and butyrate) is plentiful
+      if (k === 'mucus') N[k] += (0.62 - N[k]) * dt * (0.003 + 0.012 * fibre);
       else N[k] = Math.max(0, N[k] - DECAY * dt);
     }
-    const fibre = (N.quarry + N.bakery + N.fields + N.orchard + N.lab) / 5;
     const target = clamp(0.2 + 0.85 * N.springs - 0.5 * Math.max(0, fibre - 0.42), 0.12, 1);
     state.springLvl += (target - state.springLvl) * Math.min(1, dt * 0.35);
     state.millAng += dt * (0.25 + N.fields * 0.9);
@@ -1698,7 +1695,7 @@
 .fw-hint{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 18px);transform:translateX(-50%);padding:9px 16px;border-radius:999px;background:rgba(251,248,243,.78);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-size:13px;font-weight:600;color:var(--ink,#24302A);box-shadow:0 8px 24px rgba(30,14,26,.22);pointer-events:none;transition:opacity .6s;white-space:nowrap}
 .fw-hint.gone{opacity:0}
-@media (min-width:720px){.fw-bottom{flex-direction:row;align-items:center;justify-content:center}.fw-talk-row{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 14px)}.fw-chips{margin:0}}
+@media (min-width:720px){.fw-bottom{flex-direction:row;align-items:center;justify-content:center;gap:12px}.fw-talk-row{order:2;flex:0 0 auto}.fw-chips{order:1;margin:0;flex:0 1 auto;min-width:0}}
 @media (prefers-reduced-motion:reduce){.fw-label,.fw-toast,.fw-hint{transition:none}.fw-chips{scroll-behavior:auto}}
 `;
   function el(tag, cls, parent) { const e = document.createElement(tag); if (cls) e.className = cls; if (parent) parent.appendChild(e); return e; }
@@ -1747,9 +1744,19 @@
     canvas.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
   }
+  const floraArt = new Image();
+  floraArt.onload = () => drawTalkFace();
+  floraArt.src = 'art/flora.png';
   function drawTalkFace() {
     const fc = talkEl && talkEl._fc; if (!fc) return;
     const g = fc.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 68, 68);
+    if (floraArt.complete && floraArt.naturalWidth) {
+      // Crop Flora's face and shoulders from the approved artwork
+      const k = floraArt.naturalWidth / 1024;
+      g.save(); g.beginPath(); g.arc(34, 34, 34, 0, TAU); g.clip();
+      g.drawImage(floraArt, 262 * k, 150 * k, 500 * k, 500 * k, 0, 0, 68, 68);
+      g.restore(); return;
+    }
     if (window.FloraCast && typeof FloraCast.drawFlora === 'function') {
       try { g.save(); FloraCast.drawFlora(g, 34, 36, 54, { t: state.t, talking: false, mood: 'happy', lookX: 0, lookY: 0 }); g.restore(); return; } catch (e) { /* fall through */ }
     }
