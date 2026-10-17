@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cast Gallery</title>
+<style>
+:root{--sage:#5A7A66;--sage-deep:#3D5A48;--sage-soft:#DCE5DD;--cream:#F3EEE6;--paper:#FBF8F3;--ink:#24302A;--muted:#6B7A70;--line:rgba(36,48,42,.12)}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:Figtree,system-ui,sans-serif}
+header{padding:16px 20px;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+h1{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-weight:400;font-size:30px;margin:0}
+.meta{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:10px;padding:0 16px 16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.card canvas{display:block;width:100%;height:190px;background:linear-gradient(#fbf6ef,#efe6da)}
+.card .lab{padding:6px 10px 8px;font-size:12px;line-height:1.3}
+.card b{font-size:14px}
+.card i{color:var(--muted)}
+.row{display:flex;gap:12px;padding:0 16px 16px;flex-wrap:wrap}
+.panel{background:var(--cream);border-radius:18px;border:1px solid var(--line)}
+#flora{width:100%;max-width:1100px;height:320px;display:block}
+#crowd{width:100%;max-width:1100px;height:300px;display:block;background:linear-gradient(#2e2032,#4a2f3c)}
+#ports{width:100%;max-width:1100px;height:110px;display:block;background:#fff}
+#small{width:100%;max-width:1100px;height:110px;display:block;background:linear-gradient(#fbf6ef,#efe6da)}
+</style>
+</head>
+<body>
+<header><h1>hiflora cast</h1><span class="meta" id="meta">building…</span></header>
+<div class="row"><canvas id="flora" class="panel"></canvas></div>
+<div class="grid" id="grid"></div>
+<div class="row"><canvas id="small" class="panel"></canvas></div>
+<div class="row"><canvas id="ports" class="panel"></canvas></div>
+<div class="row"><canvas id="crowd" class="panel"></canvas></div>
+<script src="roster.js"></script>
+<script src="cast.js"></script>
+<script>
+(function(){
+  const Q = new URLSearchParams(location.search);
+  const FREEZE = Q.has('t') ? parseFloat(Q.get('t')) : null;
+  const FORCE = Q.get('act');
+  const HUNGRY = Q.has('hungry');
+  const DPR = Math.min(2, devicePixelRatio || 1);
+  const ACTS = ['idle','walk','work','carry','eat','sleep','celebrate','wave','divide','run','work','idle'];
+  const CARRY = ['butyrate','lactate','starch','mucus','acetate','sulfide','leaf','flask'];
+  const ids = Object.keys(FloraCast.SPECIES).sort();
+  const ms = FloraCast.build(70, DPR);
+  const R = window.FLORA_ROSTER;
+  document.getElementById('meta').textContent = 'build(): ' + ms.toFixed(0) + ' ms for ' + ids.length + ' species + Flora · dpr ' + DPR + (FORCE ? ' · forced ' + FORCE : '') + (FREEZE != null ? ' · t=' + FREEZE : '');
+
+  function fit(cv){ const r = cv.getBoundingClientRect(); cv.width = Math.round(r.width*DPR); cv.height = Math.round(r.height*DPR); const g = cv.getContext('2d'); g.setTransform(DPR,0,0,DPR,0,0); return {g, w:r.width, h:r.height}; }
+
+  const grid = document.getElementById('grid'), cards = [];
+  ids.forEach((id, i) => {
+    const sp = FloraCast.SPECIES[id], d = document.createElement('div'); d.className = 'card';
+    const ro = R && R.species[id];
+    d.innerHTML = '<canvas></canvas><div class="lab"><b>' + sp.nick + '</b> <i>' + (ro ? ro.species : id) + '</i><br><span class="act"></span></div>';
+    grid.appendChild(d);
+    const inst = { id:'g'+i, species:id, x:0, y:0, t:0, phase:i*0.77, activity:'idle', activityT:0, dirX:1, mood:0.6, hungry:HUNGRY, carrying:CARRY[i%CARRY.length], lift:0, sqx:1, sqy:1, selected:false };
+    cards.push({ id, inst, cv:d.querySelector('canvas'), lab:d.querySelector('.act'), off:i*0.9 });
+  });
+  cards.forEach(c => { c.ctx = fit(c.cv); });
+
+  const fl = fit(document.getElementById('flora'));
+  const sm = fit(document.getElementById('small'));
+  const pt = fit(document.getElementById('ports'));
+  const cr = fit(document.getElementById('crowd'));
+
+  const crowd = [];
+  for (let i = 0; i < 64; i++) { const id = ids[i % ids.length]; crowd.push({ id:'c'+i, species:id, x:Math.random()*cr.w, y:60+Math.random()*(cr.h-70), t:Math.random()*10, phase:Math.random()*6.28, activity:['idle','walk','work','run','carry','eat'][i%6], activityT:0, dirX:Math.random()<.5?-1:1, mood:.6, hungry:false, carrying:CARRY[i%8], lift:0, sqx:1, sqy:1 }); }
+
+  let T0 = performance.now(), last = T0, fpsA = 0, fpsN = 0, fps = 0;
+  function frame(now){
+    const dt = Math.min(0.05, (now - last)/1000); last = now;
+    const T = FREEZE != null ? FREEZE : (now - T0)/1000;
+    // Flora moods
+    { const g = fl.g; g.clearRect(0,0,fl.w,fl.h); g.fillStyle = '#F3EEE6'; g.fillRect(0,0,fl.w,fl.h);
+      const moods = [['happy',false],['happy',true],['curious',false],['thinking',false],['excited',true]];
+      const n = moods.length, size = Math.min(260, fl.w/n*1.05);
+      moods.forEach((m,k) => { const cx = fl.w*(k+0.5)/n; FloraCast.drawFlora(g, cx, fl.h*0.52, size, { t:T+k*0.7, talking:m[1], mood:m[0], lookX:Math.sin(T*0.6+k)*0.8, lookY:Math.cos(T*0.4+k)*0.4 });
+        g.fillStyle = '#6B7A70'; g.font = '12px system-ui'; g.textAlign='center'; g.fillText(m[0] + (m[1]?' · talking':''), cx, fl.h-10); });
+    }
+    for (const c of cards) {
+      const g = c.ctx.g, w = c.ctx.w, h = c.ctx.h; g.clearRect(0,0,w,h);
+      const slot = Math.floor((T + c.off) / 3.2), act = FORCE || ACTS[slot % ACTS.length];
+      const st = (T + c.off) % 3.2;
+      c.inst.t = T + c.off; c.inst.activity = act; c.inst.activityT = FORCE ? T + c.off : st;
+      c.inst.dirX = 1;
+      c.inst.lift = act === 'walk' || act === 'run' ? 0 : 0;
+      FloraCast.tick(c.inst, dt);
+      FloraCast.draw(g, c.inst, w*0.42, h*0.86, 1);
+      c.lab.textContent = act + (act==='carry' ? ' ' + c.inst.carrying : '') + ' · ' + FloraCast.SPECIES[c.id].workStyle + ' · ' + FloraCast.SPECIES[c.id].niche;
+    }
+    { const g = sm.g; g.clearRect(0,0,sm.w,sm.h); const step = sm.w/ids.length;
+      ids.forEach((id,k) => { const inst = cards[k].inst; FloraCast.draw(g, {species:id, t:T+k, phase:k, activity:'idle', activityT:T, dirX:1, mood:.6, hungry:false, lift:0, sqx:1, sqy:1, _c:null}, step*(k+0.5), sm.h-14, 0.55); }); }
+    { const g = pt.g; g.clearRect(0,0,pt.w,pt.h); const step = pt.w/ids.length; ids.forEach((id,k) => FloraCast.drawPortrait(g, id, step*(k+0.5), pt.h/2, Math.min(step*1.1, 96), T+k)); }
+    { const g = cr.g; g.clearRect(0,0,cr.w,cr.h); const t0 = performance.now();
+      crowd.sort((a,b)=>a.y-b.y);
+      for (const c of crowd) { c.t += dt; c.activityT += dt; if (c.activity==='walk'||c.activity==='run') { c.x += c.dirX*dt*(c.activity==='run'?60:25); if (c.x<10||c.x>cr.w-10) c.dirX*=-1; }
+        FloraCast.draw(g, c, c.x, c.y, 0.5 + (c.y/cr.h)*0.35); }
+      fpsA += performance.now()-t0; fpsN++; if (fpsN >= 30) { fps = fpsA/fpsN; fpsA = 0; fpsN = 0; }
+      g.fillStyle = '#fff'; g.font = '12px system-ui'; g.textAlign='left'; g.fillText('64 instances · draw ' + fps.toFixed(2) + ' ms/frame', 10, 18); window.__crowdMs = fps; }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

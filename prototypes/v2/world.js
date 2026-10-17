@@ -47,7 +47,7 @@
   const WW = MARGIN * 2 + NW * 7;     // world width (~5 phone screens)
   const P = 0.45;                     // back-layer parallax factor
   const UNIT = 52;                    // average character height in world units at scale 1
-  const BAND_Y0 = 482, BAND_Y1 = 728; // where residents roam
+  const BAND_Y0 = 482, BAND_Y1 = 704; // where residents roam
   const OV = 3;                       // tile overlap in world units (hides seams)
 
   const NICHES = [
@@ -183,7 +183,12 @@
       { niche: 'springs', x: c('springs') + 128, y: 506, sz: 38, hue: 80, kind: 'mush', dull: true },
     ];
     L.lamps = [];
-    for (let x = MARGIN + 60; x < WW - MARGIN; x += 232) L.lamps.push({ x, y: roadY(x) - 30 });
+    const blocked = (x, y) => L.pools.concat(L.basins).some((b) => ((x - b.x) / (b.rx + 16)) ** 2 + ((y - b.y) / (b.ry + 14)) ** 2 < 1);
+    for (let x = MARGIN + 60; x < WW - MARGIN; x += 232) {
+      let y = roadY(x) - 30;
+      if (blocked(x, y)) y = roadY(x) + 36; // move to the near side of the road if a pool is in the way
+      if (!blocked(x, y)) L.lamps.push({ x, y });
+    }
     L.lanePosts = [[-82, 452], [-44, 448], [-90, 530], [-36, 524]].map(([dx, y]) => ({ x: c('bakery') + dx, y }));
   })();
 
@@ -374,8 +379,19 @@
     const q = L.quarry;
     softEllipse(g, q.x, q.y + 4, 110, 22, [214, 196, 168], 0.6);
     // back rock face
-    g.fillStyle = '#cfc2ad'; g.beginPath(); g.moveTo(q.x - 100, q.y); g.quadraticCurveTo(q.x - 90, q.y - 70, q.x - 30, q.y - 86); g.quadraticCurveTo(q.x + 40, q.y - 104, q.x + 96, q.y - 52); g.quadraticCurveTo(q.x + 108, q.y - 20, q.x + 100, q.y); g.closePath(); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.25)'; g.beginPath(); g.moveTo(q.x - 86, q.y - 30); g.quadraticCurveTo(q.x - 60, q.y - 80, q.x - 10, q.y - 88); g.quadraticCurveTo(q.x - 50, q.y - 60, q.x - 86, q.y - 30); g.fill();
+    // terraced pale cliff with strata (the quarry face)
+    const face = new Path2D();
+    face.moveTo(q.x - 104, q.y); face.lineTo(q.x - 98, q.y - 34); face.lineTo(q.x - 72, q.y - 40); face.lineTo(q.x - 64, q.y - 74); face.lineTo(q.x - 20, q.y - 80);
+    face.lineTo(q.x + 26, q.y - 96); face.lineTo(q.x + 60, q.y - 70); face.lineTo(q.x + 88, q.y - 64); face.lineTo(q.x + 98, q.y - 28); face.lineTo(q.x + 106, q.y); face.closePath();
+    let fg = g.createLinearGradient(q.x - 100, q.y - 96, q.x + 100, q.y);
+    fg.addColorStop(0, '#f6eddc'); fg.addColorStop(0.55, '#e3d3b8'); fg.addColorStop(1, '#bfa98c');
+    g.fillStyle = fg; g.fill(face);
+    g.save(); g.clip(face);
+    g.strokeStyle = 'rgba(150,120,90,0.35)'; g.lineWidth = 1.2;
+    for (let k = 1; k < 7; k++) { const yy = q.y - k * 14; g.beginPath(); g.moveTo(q.x - 110, yy + 4); g.quadraticCurveTo(q.x, yy - 6, q.x + 110, yy + 2); g.stroke(); }
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(q.x - 72, q.y - 76, 52, 3); g.fillRect(q.x - 98, q.y - 36, 26, 3); g.fillRect(q.x + 60, q.y - 68, 28, 3);
+    g.fillStyle = 'rgba(120,90,70,0.22)'; g.beginPath(); g.moveTo(q.x + 98, q.y - 28); g.lineTo(q.x + 106, q.y); g.lineTo(q.x + 70, q.y); g.closePath(); g.fill();
+    g.restore();
     crystal(g, q.x - 6, q.y - 4, 34, 118, -0.06, 0);
     crystal(g, q.x + 30, q.y, 26, 84, 0.18, 4);
     crystal(g, q.x - 36, q.y, 22, 70, -0.28, 6);
@@ -794,6 +810,14 @@
       }
       g.restore();
     }
+    { // murky green-grey air drifting over the Sulfur Springs end
+      const mx = NB.springs.cx * P + 160, my = HZ - 120;
+      if (mx - 520 < x1) {
+        gr = g.createRadialGradient(mx, my, 0, mx, my, 520);
+        gr.addColorStop(0, 'rgba(52,56,30,0.5)'); gr.addColorStop(1, 'rgba(52,56,30,0)');
+        g.fillStyle = gr; g.fillRect(mx - 520, my - 520, 1040, 1040);
+      }
+    }
     g.save(); g.globalCompositeOperation = 'lighter';
     const bc = [[255, 214, 180], [255, 190, 220], [255, 236, 200]];
     for (const b of S.bokeh) { if (b.x < x0 - 12 || b.x > x1 + 12) continue; g.fillStyle = rgba(bc[b.c], b.a); g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.fill(); }
@@ -939,20 +963,29 @@
     for (const n of NICHES) if (n.x1 + 60 > x0 && n.x0 - 60 < x1) LANDMARKS[n.id](g, n);
     paintRoad(g, x0, x1);
     paintScatter(g, x0, x1);
+    // murky haze over the Sulfur Springs corner
+    const sp = NB.springs;
+    if (sp.x0 - 200 < x1) {
+      const hg = g.createLinearGradient(sp.x0 - 140, 0, WW, 0);
+      hg.addColorStop(0, 'rgba(70,74,40,0)'); hg.addColorStop(0.45, 'rgba(70,74,40,0.22)'); hg.addColorStop(1, 'rgba(50,52,30,0.4)');
+      g.save(); g.globalCompositeOperation = 'source-atop'; // tint only what is painted
+      g.fillStyle = hg; g.fillRect(Math.max(x0, sp.x0 - 140), MAIN_Y0, x1 - Math.max(x0, sp.x0 - 140), YMAX - MAIN_Y0);
+      g.restore();
+    }
     // world ends: tall framing villi
     const ends = [[-10, 1], [WW + 10, -1]];
     for (const [ex, dir] of ends) {
       if (Math.abs(ex - (x0 + x1) / 2) > (x1 - x0) / 2 + 220) continue;
-      const rnd = mulberry(ex > 0 ? 5 : 3);
-      villus(g, ex + dir * 20, YMAX - 120, 120, 640, [350, 48, 50], rnd, 0);
-      villus(g, ex + dir * 92, YMAX - 160, 80, 470, [354, 50, 56], rnd, 0);
-      villus(g, ex + dir * 40, YMAX - 30, 96, 300, [346, 52, 46], rnd, 0);
+      const rnd = mulberry(ex > 0 ? 5 : 3), dull = dir < 0;
+      villus(g, ex + dir * 10, YMAX - 120, 110, 640, dull ? [16, 22, 40] : [348, 46, 48], rnd, dull ? 0 : 0.6);
+      villus(g, ex + dir * 80, YMAX - 170, 70, 440, dull ? [24, 20, 46] : [352, 48, 54], rnd, dull ? 0 : 0.6);
+      villus(g, ex + dir * 34, YMAX - 30, 90, 300, dull ? [14, 22, 34] : [344, 50, 44], rnd, 0);
     }
   }
 
   function makeTiles(kind) {
     const isBack = kind === 'back';
-    const res = isBack ? Math.min(DPR, 1) : DPR;           // back layer is soft anyway: 1x
+    const res = isBack ? Math.min(DPR, 1) : tileRes();      // back layer is soft anyway: 1x
     const k = s * res;                                      // device px per world unit
     const tw = Math.floor(2000 / k) - OV;                   // tile width in units, <= 2048 device px with overlap
     const span = isBack ? backRange() : [0, WW];
@@ -969,9 +1002,10 @@
     set.painter(g, t.x0, t.x0 + t.w);
     t.cv = cv;
   }
+  function tileRes() { return Math.min(2, DPR * Math.max(1, zoomDefault())); }
   function buildPropSprites() {
     props = [];
-    const k = s * DPR;
+    const k = s * tileRes();
     const mk = (w, h, ax, ay, fn) => {
       const cv = document.createElement('canvas'); cv.width = Math.ceil(w * k); cv.height = Math.ceil(h * k);
       const g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, ax * k, ay * k);
@@ -1111,30 +1145,30 @@
       });
       else if (SCFA_SUPPLIERS[sp] && sp !== 'b-adolescentis') {
         const far = Math.abs(N.cx - NB.bakery.cx) > NW * 1.6;
-        add(sp === 'a-muciniphila' ? 0.6 : far ? 1.4 : 2, 'errand', () => {
+        add(sp === 'a-muciniphila' ? 0.4 : far ? 0.8 : 1.1, 'errand', () => {
           const [x, y] = workSpot(n), scfa = pick(SCFA_SUPPLIERS[sp]);
           return [go(x, y), doo('work', rand(2.5, 4)), ...toBakery(inst, scfa)];
         });
       }
-      if (BUTYRATE_MAKERS.has(sp)) add(n === 'bakery' ? 3 : 1.4, 'errand', () => {
+      if (BUTYRATE_MAKERS.has(sp)) add((n === 'bakery' ? 1.5 : 0.7) * (state.stock.length ? 1.4 : 0.8), 'errand', () => {
         const house = pick(L.colonocytes), [x, y] = n === 'bakery' ? workSpot('bakery') : workSpot(n);
         return [go(x, y), doo('work', rand(3, 5)), fn(() => { takeStock(); inst.carrying = 'butyrate'; }),
           go(L.laneEntry.x, L.laneEntry.y + 6, 'carry', 'butyrate'), go(house.door.x + rand(-4, 4), house.door.y, 'carry', 'butyrate'),
           doo('idle', 0.7), fn(() => { deliverButyrate(house); inst.carrying = null; }), doo('celebrate', 1.0)];
       });
-      if (n === 'lab') add(1.4, 'errand', () => {
+      if (n === 'lab') add(1.0, 'errand', () => {
         const [x, y] = workSpot('lab'), [x2, y2] = workSpot('lab');
         return [go(x, y), doo('work', rand(3, 5)), fn(() => { inst.carrying = 'flask'; }), go(x2, y2, 'carry', 'flask'), doo('idle', 0.8), fn(() => { inst.carrying = null; })];
       });
-      if (n === 'springs') add(0.8 + state.springLvl * 2, 'errand', () => {
+      if (n === 'springs') add(0.4 + state.springLvl * 1.6, 'errand', () => {
         const [x, y] = workSpot('springs');
         return [go(x, y), doo('work', rand(2, 4)), fn(() => { inst.carrying = 'sulfide'; }), go(L.vent.x - 10, L.vent.y + 22, 'carry', 'sulfide'), doo('idle', 0.6), fn(() => { inst.carrying = null; ventPuff(); })];
       });
-      if (sp === 's-copri' || sp === 'b-ovatus') add(1.4, 'errand', () => {
+      if (sp === 's-copri' || sp === 'b-ovatus') add(0.9, 'errand', () => {
         const [x, y] = workSpot('fields');
         return [go(x, y), doo('work', rand(3, 5)), fn(() => { inst.carrying = 'leaf'; }), go(L.basket.x + rand(-10, 10), L.basket.y + 6, 'carry', 'leaf'), doo('idle', 0.6), fn(() => { inst.carrying = null; })];
       });
-      if (sp === 'a-muciniphila') add(1.2, 'errand', () => {
+      if (sp === 'a-muciniphila') add(0.9, 'errand', () => {
         const p = pick(L.pools), x = p.x + rand(-p.rx, p.rx) * 0.9, p2 = pick(L.pools);
         return [go(x, p.y + p.ry + 4), doo('work', rand(3, 5)), fn(() => { inst.carrying = 'mucus'; }), go(p2.x + rand(-20, 20), p2.y + p2.ry + 6, 'carry', 'mucus'), doo('idle', 0.6), fn(() => { inst.carrying = null; })];
       });
@@ -1473,6 +1507,7 @@
      6. Camera + input
      ====================================================================== */
   const cam = { cx: NB.bakery.cx, cy: REF_H / 2, z: 1, vx: 0, vy: 0, fly: null };
+  function zoomDefault() { return clamp(W / (NW * 3 * s), 1, 1.45); } // wide screens start a little closer
   function zoomMin() { return clamp(Math.max(0.8, W / (WW * s), H / ((YMAX - YMIN) * s)), 0.5, 1); }
   const ZMAX = 1.6;
   const SS = () => s * cam.z;
@@ -1787,7 +1822,7 @@
     const nW = Math.max(1, Math.round(r.width)), nH = Math.max(1, Math.round(r.height));
     const nDPR = Math.min(2, window.devicePixelRatio || 1);
     if (built && nW === W && nH === H && nDPR === DPR) return;
-    const prevS = s;
+    const prevS = s, wasDefault = !built || Math.abs(cam.z - zoomDefault()) < 0.01;
     W = nW; H = nH; DPR = nDPR;
     s = Math.max(H / REF_H, W / WW);
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
@@ -1796,6 +1831,7 @@
     if (!SCENE || prevS !== s) buildScene(...backRange());
     buildPropSprites();
     built = true;
+    if (wasDefault) { cam.z = zoomDefault(); cam.cy = defaultCy(cam.z); }
     clampCam();
     if (castOK()) castBuild();
   }
@@ -1858,7 +1894,7 @@
     ctx.globalCompositeOperation = 'source-over';
     for (const p of state.parts) {
       if (!vis(p.x)) continue;
-      const k = p.t / p.life, a = Math.sin(Math.min(1, k) * Math.PI) * (p.spr === 'sulfur' ? 0.55 : 0.5), r = p.size * (0.6 + k * 1.3);
+      const k = p.t / p.life, a = Math.sin(Math.min(1, k) * Math.PI) * (p.spr === 'sulfur' ? 0.5 + state.springLvl * 0.3 : 0.55), r = p.size * (0.7 + k * 1.6);
       ctx.globalAlpha = a; ctx.drawImage(puffSpr[p.spr], p.x - r, p.y - r, r * 2, r * 2);
     }
     ctx.globalAlpha = 1;
@@ -1903,12 +1939,12 @@
     if (vis(NB.mucus.cx, 200)) for (const p of L.pools) gl(glowSpr.pink, p.x, p.y, p.rx * 1.2, 0.18 + 0.06 * Math.sin(T * 1.3 + p.x));
     if (vis(NB.springs.cx, 220)) for (const b of L.basins) gl(glowSpr.sulfur, b.x, b.y, b.rx * (0.7 + state.springLvl * 0.7), 0.12 + state.springLvl * 0.22);
     if (vis(NB.quarry.cx, 200)) gl(glowSpr.white, L.quarry.x - 6, L.quarry.y - 60, 70, 0.16);
-    for (const it of state.food) if (vis(it.x) && it.t >= 0) gl(glow('f' + it.type, it.col), it.x, it.y + it.z - 5, 26 * it.scale, 0.75);
+    for (const it of state.food) if (vis(it.x) && it.t >= 0) gl(glow('f' + it.type, it.col), it.x, it.y + it.z - 6, 34 * it.scale, 0.85);
     for (const b of state.starch) if (vis(b.x)) gl(glowSpr.white, b.x, b.y - 3, 9, 0.35 + 0.2 * Math.sin(T * 3 + b.ph));
     ctx.globalAlpha = 1;
   }
   function drawFood(it, T) {
-    const x = it.x, y = it.y + it.z - 5, r = 5.2 * it.scale;
+    const x = it.x, y = it.y + it.z - 6, r = 7 * it.scale;
     if (r <= 0.2) return;
     if (it.landed) { ctx.fillStyle = 'rgba(40,14,24,0.25)'; ctx.beginPath(); ctx.ellipse(x, it.y, r * 1.2, r * 0.35, 0, 0, TAU); ctx.fill(); }
     const bob = it.landed ? Math.sin(T * 3 + x) * 0.8 : 0;

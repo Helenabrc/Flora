@@ -742,15 +742,15 @@
     'animation:fc-breathe 7s ease-in-out infinite}',
     '.fc-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}',
     '.fc-stage.fc-img canvas{display:none}',
-    '.fc-fig{position:absolute;inset:0;transform-origin:50% 88%;will-change:transform;pointer-events:none}',
+    '.fc-fig{position:absolute;inset:-8%;transform-origin:50% 88%;will-change:transform;pointer-events:none}',
     '.fc-fig img{display:block;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .9s ease;user-select:none;-webkit-user-drag:none;',
     '-webkit-mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 84%,transparent 100%);mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 84%,transparent 100%)}',
     '.fc-stage.fc-img .fc-fig img{opacity:1}',
     '.fc-stage:not(.fc-img) .fc-fig,.fc-stage:not(.fc-img) .fc-shadow{display:none}',
-    '.fc-shadow{position:absolute;left:31%;width:38%;top:85%;height:7%;border-radius:50%;pointer-events:none;will-change:transform,opacity;',
+    '.fc-shadow{position:absolute;left:29%;width:42%;top:89.5%;height:7%;border-radius:50%;pointer-events:none;will-change:transform,opacity;',
     'background:radial-gradient(closest-side,rgba(58,66,50,.26),rgba(58,66,50,.1) 60%,rgba(58,66,50,0))}',
     '.fc-sparks{position:absolute;inset:0;pointer-events:none;overflow:visible}',
-    '.fc-spark{position:absolute;left:50%;top:38%;width:var(--s,10px);height:var(--s,10px);margin:calc(var(--s,10px)/-2) 0 0 calc(var(--s,10px)/-2);',
+    '.fc-spark{position:absolute;left:50%;top:34%;width:var(--s,10px);height:var(--s,10px);margin:calc(var(--s,10px)/-2) 0 0 calc(var(--s,10px)/-2);',
     'background:var(--c,#fff);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);opacity:0;',
     'animation:fc-spark var(--d,900ms) cubic-bezier(.15,.7,.3,1) var(--w,0ms) forwards}',
     '.fc-spark.fc-dot{clip-path:none;border-radius:50%}',
@@ -916,7 +916,7 @@
     '.fc-say{max-width:20em}',
     '}',
     '@media (max-height:760px){.fc-stage{--fc-size:240px}}',
-    '@media (min-width:760px){.fc-stage{--fc-size:340px}.fc-root.fc-compact .fc-stage{--fc-size:280px}}',
+    '@media (min-width:760px){.fc-stage{--fc-size:360px}.fc-root.fc-compact .fc-stage{--fc-size:300px}}',
     '@media (max-width:759px){.fc-root.fc-compact .fc-stage{--fc-size:240px}.fc-root.fc-compact .fc-say{font-size:clamp(23px,6vw,30px)}.fc-root.fc-compact .fc-say.fc-s,.fc-root.fc-compact .fc-say.fc-xs{font-size:clamp(20px,5.2vw,25px)}.fc-top{height:60px}.fc-iconbtn{top:9px}.fc-col{min-height:calc(100% - 60px)}.fc-widget,.fc-chips{margin-top:18px}.fc-form{margin-top:18px}}',
     '@media (max-width:380px){.fc-saved{gap:14px}.fc-ring{width:112px;height:112px}.fc-ring-c b{font-size:32px}}',
     '@media (prefers-reduced-motion:reduce){',
@@ -1062,7 +1062,7 @@
   FloraStage.prototype.sparkle = function (n) {
     var box = this.p.sparks;
     if (!box || reduced()) return;
-    var cols = ['#FFFFFF', '#F3EEE6', '#B9CDBE', '#E9D9A6', '#8FB09A'];
+    var cols = ['#E2C46F', '#FFFFFF', '#8FB09A', '#EAD9A0', '#B9CDBE'];
     var w = box.clientWidth || 260;
     for (var i = 0; i < n; i++) {
       var a = -Math.PI / 2 + (i / n - 0.5) * Math.PI * 1.5 + (Math.random() - 0.5) * 0.4;
@@ -1134,9 +1134,12 @@
     if (!rm && hopP >= 0 && hopP < 1) hopY = -Math.abs(Math.sin(hopP * Math.PI * 2)) * cw * 0.05 * (1 - hopP);
     var size = cw * 0.8;
     var cx = cw / 2, cy = ch * 0.48 + floatY + hopY;
-    // soft contact shadow
+    var cast = window.FloraCast;
+    var realCast = !this.castFailed && cast && typeof cast.drawFlora === 'function' && !cast.__stub;
+    // soft contact shadow (the real cast draws its own)
     var lift = (floatY + hopY) / (cw * 0.05);
     var sw = cw * 0.24 * (1 + lift * 0.12);
+    if (!realCast) {
     g.save();
     g.globalAlpha = 0.16 - lift * 0.03;
     var sg = g.createRadialGradient(cx, ch * 0.93, 0, cx, ch * 0.93, sw);
@@ -1144,8 +1147,8 @@
     g.fillStyle = sg;
     g.beginPath(); g.ellipse(cx, ch * 0.93, sw, sw * 0.16, 0, 0, Math.PI * 2); g.fill();
     g.restore();
+    }
     var state = { t: this.t, talking: this.t < this.talkUntil, mood: this.mood, lookX: this.lookX, lookY: this.lookY };
-    var cast = window.FloraCast;
     if (!this.castFailed && cast && typeof cast.drawFlora === 'function') {
       try {
         g.save(); cast.drawFlora(g, cx, cy, size, state); g.restore();
