@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>hiflora · chat dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage:#5A7A66; --sage-deep:#3D5A48; --sage-soft:#DCE5DD; --cream:#F3EEE6;
+    --paper:#FBF8F3; --ink:#24302A; --muted:#6B7A70; --line:rgba(36,48,42,.12);
+  }
+  html, body { margin:0; height:100%; background:var(--paper); }
+  #chat-screen { position:fixed; inset:0; }
+  #devlog { position:fixed; left:8px; bottom:8px; z-index:99; font:11px/1.3 ui-monospace,monospace; color:#6B7A70; pointer-events:none; max-width:60vw; }
+</style>
+</head>
+<body>
+<div id="chat-screen"></div>
+<div id="devlog" aria-hidden="true"></div>
+<script>
+  // Inline FloraApp stub: localStorage logbook, show() logs.
+  (function () {
+    var KEY = 'hiflora.dev.entries';
+    function read() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+    window.FloraApp = {
+      tokens: { sage:'#5A7A66', sageDeep:'#3D5A48', sageSoft:'#DCE5DD', cream:'#F3EEE6', paper:'#FBF8F3', ink:'#24302A', muted:'#6B7A70' },
+      saveEntry: function (entry) {
+        var all = read(); all.push(entry);
+        try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {}
+        console.log('[FloraApp stub] saveEntry', entry);
+      },
+      entries: function () { return read(); },
+      show: function (name, payload) {
+        console.log('[FloraApp stub] show', name, payload);
+        window.__lastShow = { name: name, payload: payload };
+        var d = document.getElementById('devlog');
+        d.textContent = 'FloraApp.show(' + name + ') with ' + (payload && payload.entry ? payload.entry.foods.length + ' foods' : 'no entry');
+      },
+      openProfile: function (id) { console.log('[FloraApp stub] openProfile', id); }
+    };
+  })();
+
+  // Load cast.js if present, else the stub; then chat.js. "?stub" forces the stub (dev only, no user data).
+  (function () {
+    function load(src, ok, fail) {
+      var s = document.createElement('script');
+      s.src = src; s.onload = ok; s.onerror = fail || ok;
+      document.body.appendChild(s);
+    }
+    function start() {
+      load('chat.js', function () {
+        FloraChat.mount(document.getElementById('chat-screen'));
+        FloraChat.onShow();
+      });
+    }
+    var forceStub = /[?&]stub\b/.test(location.search);
+    if (forceStub) { load('stub-flora.js', start); return; }
+    load('cast.js', function () {
+      if (window.FloraCast && typeof FloraCast.drawFlora === 'function') start();
+      else load('stub-flora.js', start);
+    }, function () { load('stub-flora.js', start); });
+  })();
+</script>
+</body>
+</html>
